@@ -30,9 +30,9 @@ jobs:
         env:
           NEXT_PUBLIC_SITE_URL: https://buimhung.com
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=buimhung-portfolio --branch=main
+          command: deploy

@@ -49,36 +49,29 @@ The site is a static export (`next.config.ts` → `output: "export"`), so `npm r
 
 There are two deploy paths. **Pick one.**
 
-### Option A — Dashboard git integration (simplest)
+The deploy uses a **static-assets Worker** configured by [`wrangler.jsonc`](wrangler.jsonc) — `npm run build` produces `./out`, then `wrangler deploy` uploads it as static content. No SSR adapter / OpenNext involved.
+
+### Option A — Cloudflare Workers Builds (simplest)
 
 One-time setup:
 
 1. Push this repo to GitHub.
-2. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → select the repo.
-3. Build settings:
-   - Framework preset: **Next.js (Static HTML Export)**
+2. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Workers** → **Import a repository** → select the repo.
+3. The build settings auto-detect from `wrangler.jsonc`. If the dashboard shows anything different, override to:
    - Build command: `npm run build`
-   - Build output directory: `out`
-   - Node version: `22`
+   - Deploy command: `npx wrangler deploy`
+   - (Leave "Build output directory" empty — `wrangler.jsonc` handles it via `assets.directory`.)
 4. Environment variables (Production):
    - `NEXT_PUBLIC_SITE_URL` = `https://buimhung.com`
 5. Save and deploy.
 
-Pushes to `main` auto-deploy. PRs get preview deployments.
+Pushes to `main` auto-deploy.
 
-### Option B — GitHub Actions (already wired up)
+> **If Cloudflare auto-detects the project as a full Next.js app** (build log mentions OpenNext / `pages-manifest.json`), the presence of `wrangler.jsonc` overrides this — re-trigger the build. Otherwise, in the project's **Settings → Build**, set the Framework preset to **None**.
 
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) deploys on every push to `main` using Wrangler.
+### Option B — GitHub Actions
 
-One-time setup:
-
-1. Create a Cloudflare API token: Dashboard → **My Profile** → **API Tokens** → **Create Token** → use the **"Edit Cloudflare Workers"** template (it covers Pages too).
-2. Find your **Account ID**: Dashboard → **Workers & Pages** sidebar.
-3. Create the Pages project: Dashboard → **Workers & Pages** → **Create** → **Pages** → **Upload assets** (you can leave it empty; the workflow will push the real build). Name it **`buimhung-portfolio`** to match the workflow.
-4. In your GitHub repo → **Settings** → **Secrets and variables** → **Actions**, add:
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID`
-5. Push to `main`.
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) is an alternative if you'd rather not use Cloudflare's git integration. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo secrets, then push to `main`. Pick **either** Option A **or** B, not both (otherwise you'll get two deploys per push).
 
 ### Attach the custom domain
 
@@ -93,7 +86,7 @@ After the first deploy succeeds:
 
 ```bash
 NEXT_PUBLIC_SITE_URL=https://buimhung.com npm run build
-npx wrangler pages deploy out --project-name=buimhung-portfolio
+npx wrangler deploy
 ```
 
 (First run will prompt you to `wrangler login`.)
